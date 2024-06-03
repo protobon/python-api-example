@@ -1,0 +1,21 @@
+version: "3"
+
+services:
+  api-example:
+    container_name: api-example
+    restart: always
+    build:
+      context: .
+    ports:
+      - "8000:8000"
+    environment:
+      - MONGODB_DB=${MONGODB_DB}
+      - MONGODB_URI=${MONGODB_URI}
+      - APP_NAME=${APP_NAME}
+      - APP_HOST=${APP_HOST}
+      - APP_PORT=${APP_PORT}
+    volumes:
+      - "api-example:/data/api-example"
+
+volumes:
+  api-example:
