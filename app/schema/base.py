@@ -1,5 +1,5 @@
 from datetime import datetime
-from fastapi.responses import JSONResponse
+from fastapi import Response
 from loguru import logger
 from pydantic import BaseModel
 from typing import Any, Optional
@@ -32,5 +32,6 @@ def build_response(success: bool,
     ).model_dump_json()
 
     logger.info(response) if success else logger.error(response)
-    return JSONResponse(content=response,
-                        status_code=status_code)
+    return Response(content=response,
+                    status_code=status_code,
+                    media_type="application/json")
