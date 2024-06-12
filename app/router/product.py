@@ -2,9 +2,11 @@ from datetime import datetime
 from fastapi import APIRouter, Body
 from loguru import logger
 from app.schema.base import build_response
-from app.schema.product import (ProductSchema, ProductResponse,
-                                FetchProductsSchema, FetchProductsResponse,
-                                CreateProductSchema)
+from app.schema.product import (
+    ProductSchema, ProductResponse, FetchProductsSchema, FetchProductsResponse,
+    CreateProductSchema, UpdateProductSchema, UpdateProductResponse,
+    DeleteProductSchema, DeleteProductResponse
+)
 from app.controller.product import ProductController
 
 router = APIRouter(
@@ -45,7 +47,7 @@ async def get_product(product_id: str):
 @router.post(path="/new",
              description="Create a new product",
              response_model=ProductResponse)
-async def new_product(product: CreateProductSchema = Body(...)):
+async def create_product(product: CreateProductSchema = Body(...)):
     try:
         product_dict = product.model_dump()
         product_dict["createdAt"] = datetime.now()
@@ -59,19 +61,41 @@ async def new_product(product: CreateProductSchema = Body(...)):
 
 @router.put(path="/update",
             description="Update a product",
-            response_model=ProductResponse)
-async def product_update(product: ProductSchema = Body(...)):
+            response_model=UpdateProductResponse)
+async def update_product(product: UpdateProductSchema = Body(...)):
     try:
-        product_dict = product.model_dump()
-        product_dict["updatedAt"] = datetime.now()
+        product_dict = product.model_dump(exclude_none=True)
+        if not product_dict.get("id") or len(product_dict) < 2:
+            return build_response(success=False, error="Request body is empty or id is missing", status_code=400)
+
         updated = await ProductController.update_product(product_dict)
         if not updated:
             return build_response(success=False,
-                                  error=f"product {product_dict['id']} was not updated",
-                                  status_code=403)
+                                  error=f"product {getattr(product, 'id')} was not updated",
+                                  status_code=400)
 
-        product_schema = ProductSchema(**product_dict)
-        return build_response(success=True, data=product_schema, status_code=200)
+        return build_response(success=True, data=product, status_code=200)
     except Exception:
-        logger.exception("product_update")
+        logger.exception("update_product")
         return build_response(success=False, error="An error occurred while updating a product", status_code=500)
+
+
+@router.delete(path="/{product_id}",
+               description="Deletes a product",
+               response_model=DeleteProductResponse)
+async def delete_product(product_id: str):
+    try:
+        updated = await ProductController.update_product(
+            {
+                "id": product_id,
+                "enabled": False,
+            }
+        )
+        if not updated:
+            return build_response(success=False,
+                                  error=f"product {product_id} was not deleted",
+                                  status_code=400)
+        result = DeleteProductSchema(message=f"product {product_id} was successfully deleted")
+        return build_response(success=True, data=result, status_code=200)
+    except Exception:
+        logger.exception("delete_product")
