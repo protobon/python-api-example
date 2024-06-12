@@ -1,6 +1,6 @@
 from datetime import datetime
 from pydantic import BaseModel, Field
-from typing import List
+from typing import List, Optional
 
 from app.schema.base import BodySchema, ResponseSchema
 
@@ -34,6 +34,24 @@ class CreateProductSchema(BaseModel):
     quantity: int = Field(0, description="Quantity (units)", ge=0)
 
 
+""" UPDATE
+"""
+
+
+class UpdateProductSchema(BaseModel):
+    id: str = Field(None, description="Unique document id")
+    title: Optional[str] = Field(None, description="Product title", min_length=2, max_length=125)
+    quantity: Optional[int] = Field(None, description="Quantity (units)", ge=0)
+
+
+class UpdateProductBody(BodySchema):
+    data: UpdateProductSchema
+
+
+class UpdateProductResponse(ResponseSchema):
+    body: UpdateProductBody
+
+
 """ FETCH
 """
 
@@ -49,3 +67,19 @@ class FetchProductsBody(BodySchema):
 
 class FetchProductsResponse(ResponseSchema):
     body: FetchProductsBody
+
+
+""" DELETE
+"""
+
+
+class DeleteProductSchema(BaseModel):
+    message: str
+
+
+class DeleteProductBody(BodySchema):
+    data: DeleteProductSchema
+
+
+class DeleteProductResponse(ResponseSchema):
+    body: DeleteProductBody

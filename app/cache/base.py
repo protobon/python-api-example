@@ -15,7 +15,7 @@ class Cache:
                          socket_keepalive=True)
 
     @classmethod
-    async def get_one(cls, collection: str, document_id: str) -> dict:
+    async def get_one(cls, collection: str, document_id: str) -> dict | None:
         key = f'{collection}:{document_id}'
         value = cls.client.get(key)
         return orjson.loads(value) if value else None
@@ -31,3 +31,19 @@ class Cache:
     async def insert_one(cls, collection: str, doc: dict):
         key = f"{collection}:{doc['id']}"
         cls.client.set(name=key, value=orjson.dumps(doc))
+
+    @classmethod
+    async def update_one(cls, collection: str, doc: dict):
+        item = await cls.get_one(collection, doc["id"])
+        if item:
+            if doc.get("enabled") is False:
+                await cls.delete_one(collection, doc["id"])
+                return
+            for key in doc.keys():
+                item[key] = doc[key]
+            await cls.insert_one(collection, item)
+
+    @classmethod
+    async def delete_one(cls, collection: str, document_id: str):
+        key = f"{collection}:{document_id}"
+        await cls.client.delete(key)
