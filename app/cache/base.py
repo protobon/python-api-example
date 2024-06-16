@@ -14,6 +14,9 @@ class Cache:
                          decode_responses=True,
                          socket_keepalive=True)
 
+    max_req = 10
+    req_count_ttl_sec = 60
+
     @classmethod
     async def get_one(cls, collection: str, document_id: str) -> dict | None:
         key = f'{collection}:{document_id}'
@@ -47,3 +50,14 @@ class Cache:
     async def delete_one(cls, collection: str, document_id: str):
         key = f"{collection}:{document_id}"
         await cls.client.delete(key)
+
+    @classmethod
+    async def increase_req_count(cls, client_ip: str, current_count: str | None):
+        if current_count is None:
+            cls.client.setex(client_ip, cls.req_count_ttl_sec, 1)
+        else:
+            cls.client.incr(client_ip)
+
+    @classmethod
+    async def get_req_count(cls, client_ip: str):
+        return cls.client.get(client_ip)

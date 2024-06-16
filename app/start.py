@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from starlette.middleware.cors import CORSMiddleware
 import uvicorn
 import time
@@ -6,6 +6,7 @@ from os import getenv
 
 from app.router.api import api_router
 from app.common.constants import Env
+from app.router.middlewares import RateLimitMiddleware
 
 
 def run():
@@ -22,10 +23,11 @@ def run():
             allow_headers=["*"],
         )
 
+        app.add_middleware(RateLimitMiddleware)
         app.include_router(api_router)
 
         @app.middleware("http")
-        async def add_process_time_header(request, call_next):
+        async def add_process_time_header(request: Request, call_next):
             start_time = time.time()
             response = await call_next(request)
             process_time = time.time() - start_time
